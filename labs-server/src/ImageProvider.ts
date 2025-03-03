@@ -18,7 +18,6 @@ export class ImageProvider {
     constructor(private readonly mongoClient: MongoClient) {}
 
     async getAllImages(): Promise<(ImageDocument & { author: Author })[]> { // TODO #2
-        console.log("Get all images");
         const collectionName = process.env.IMAGES_COLLECTION_NAME;
         const usersCollectionName = process.env.USERS_COLLECTION_NAME;
         if (!collectionName || !usersCollectionName) {
