@@ -40,14 +40,21 @@ export function useImageFetching(imageId, delay=1000) {
     const [isLoading, setIsLoading] = useState(true);
     const [fetchedImages, setFetchedImages] = useState([]);
     useEffect(() => {
-        setTimeout(() => {
-            if (imageId === "") {
-                setFetchedImages(IMAGES);
-            } else {
-                setFetchedImages(IMAGES.filter((image) => image.id === imageId));
-            }
-            setIsLoading(false);
-        }, delay);
+        // setTimeout(() => {
+        //     if (imageId === "") {
+        //         setFetchedImages(IMAGES);
+        //     } else {
+        //         setFetchedImages(IMAGES.filter((image) => image.id === imageId));
+        //     }
+        //     setIsLoading(false);
+        // }, delay);
+
+        fetch("/api/images")
+            .then(response => response.json())
+            .then(data => {
+                setFetchedImages(data);
+                setIsLoading(false);
+            });
     }, [imageId]);
 
     return { isLoading, fetchedImages };

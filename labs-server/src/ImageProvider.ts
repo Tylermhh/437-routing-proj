@@ -1,7 +1,7 @@
 import { MongoClient, ObjectId } from "mongodb";
 
 interface ImageDocument {
-    _id: ObjectId;
+    _id: string;
     src: string;
     name: string;
     author: string;
@@ -17,30 +17,53 @@ interface Author {
 export class ImageProvider {
     constructor(private readonly mongoClient: MongoClient) {}
 
-    async getAllImages(): Promise<(ImageDocument & { author: Author })[]> { // TODO #2
+    async getAllImages(authorID?: string): Promise<(ImageDocument & { author: Author })[]> {
         const collectionName = process.env.IMAGES_COLLECTION_NAME;
         const usersCollectionName = process.env.USERS_COLLECTION_NAME;
         if (!collectionName || !usersCollectionName) {
-            throw new Error("Missing IMAGES_COLLECTION_NAME from environment variables");
+            throw new Error("Missing IMAGES_COLLECTION_NAME or USERS_COLLECTION_NAME from environment variables");
         }
 
-        const collection = this.mongoClient.db().collection<ImageDocument>(collectionName); // TODO #1
+        const collection = this.mongoClient.db().collection<ImageDocument>(collectionName);
 
-        const denormalizedImages = await collection.aggregate([
+        // Build aggregation pipeline
+        const pipeline: any[] = [
             {
                 $lookup: {
                     from: usersCollectionName,
                     localField: "author",  // The field in 'images' collection
-                    foreignField: "_id",   // The field in 'authors' collection
+                    foreignField: "_id",   // The field in 'users' collection
                     as: "author"
                 }
             },
             {
                 $unwind: { path: "$author", preserveNullAndEmptyArrays: true }
-            },
-        ]).toArray();
+            }
+        ];
 
-        console.log("Denormalized Image Documents:", denormalizedImages);
-        return denormalizedImages as (ImageDocument & {author: Author})[]; // Without any options, will by default get all documents in the collection as an array.
+        // Conditionally filter by authorID if it's provided
+        if (authorID) {
+            pipeline.unshift({ $match: { author: authorID } }); // Add $match at the start
+        }
+
+        const denormalizedImages = await collection.aggregate(pipeline).toArray();
+
+        return denormalizedImages as (ImageDocument & { author: Author })[];
     }
+
+    async updateImageName(imageId: string, newName: string): Promise<number> {
+        const collectionName = process.env.IMAGES_COLLECTION_NAME;
+        if (!collectionName) {
+            throw new Error("Missing IMAGES_COLLECTION_NAME from environment variables");
+        }
+
+        const collection = this.mongoClient.db().collection<ImageDocument>(collectionName);
+        const result = await collection.updateOne(
+            {_id: imageId},
+            {$set: {name: newName}}
+        );
+
+        return result.matchedCount;
+    }
+
 }
