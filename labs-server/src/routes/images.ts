@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { MongoClient } from "mongodb";
 import { ImageProvider } from "../ImageProvider";
+import {handleImageFileErrors, imageMiddlewareFactory} from "../imageUploadMiddleware";
 
 export function registerImageRoutes(app: express.Application, mongoClient: MongoClient) {
 
@@ -10,12 +11,12 @@ export function registerImageRoutes(app: express.Application, mongoClient: Mongo
         if (typeof req.query.createdBy === "string") {
             userId = req.query.createdBy;
         }
-        console.log(`query param: ${userId}`);
+        // console.log(`query param: ${userId}`);
 
         const images = imgProvider.getAllImages(userId);
 
         images.then((images) => {
-            return res.json(images);
+            return res.status(200).json(images);
         }).catch((err) => {
             console.error("Error fetching images:", err);
             res.status(500).json({ error: "Internal server error" });
@@ -47,4 +48,39 @@ export function registerImageRoutes(app: express.Application, mongoClient: Mongo
 
         console.log(`Image ID: ${imageId}, New Name: ${name}`);
     })
+
+    app.post(
+        "/api/images",
+        imageMiddlewareFactory.single("image"),
+        handleImageFileErrors,
+        async (req: Request, res: Response) => {
+            // Final handler function after the above two middleware functions finish running
+            const file = req.file;
+            const userFileName = req.body.name;
+            const user = res.locals.token;
+
+
+            if (!file || !userFileName) {
+                res.status(400).send({
+                    error: "Bad request",
+                    message: "Missing file or file name"
+                })
+                return;
+            }
+            const imageId = file.filename;
+            console.log(`auth stuff: ${res.locals.token}`);
+
+            const newImageDocument = {
+                _id: imageId,
+                src: `/uploads/${imageId}`,
+                name: userFileName,
+                likes: 0,
+                author: user?.username,
+            }
+            const imgProvider = new ImageProvider(mongoClient);
+            const result = imgProvider.createImage(newImageDocument);
+
+            res.status(201).send(newImageDocument);
+        }
+    )
 }

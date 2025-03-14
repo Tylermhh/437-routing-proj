@@ -1,6 +1,7 @@
 import { MainLayout } from "../MainLayout.jsx";
 import { useImageFetching } from "./useImageFetching.js";
 import "./ImageGallery.css";
+import {ImageUploadForm} from "./ImageUploadForm.jsx";
 
 export function ImageGallery(props) {
 
@@ -18,6 +19,9 @@ export function ImageGallery(props) {
             <div className="ImageGallery">
                 {imageElements}
             </div>
+
+            <h3>Image Upload Form</h3>
+            <ImageUploadForm authToken={props.authToken} />
         </>
     );
 }

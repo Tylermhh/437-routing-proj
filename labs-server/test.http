@@ -1,0 +1,31 @@
+### Register User Test (also duplicate username test)
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{ "username": "newuser", "password": "password" }
+
+### A second example, each request should be delimited by a triple hash
+GET http://localhost:3000/api/images
+
+### Missing Username or Password Test
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{ "username": "newuser" }
+
+### Login Test
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{ "username": "newuser", "password": "password" }
+
+### Login Test (wrong password)
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{ "username": "newuser", "password": "wrong password" }
+
+### Token Verification Test
+GET http://localhost:3000/api/images
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im5ld3VzZXIiLCJpYXQiOjE3NDE2NDA3OTYsImV4cCI6MTc0MTcyNzE5Nn0.zo34DCEU-Tzz3XcBMejgy5nZNiUnetYhp1n55pa0l5k
+
